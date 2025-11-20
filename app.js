@@ -46,9 +46,14 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  connectDB();
-});
+
+const startServer = async () => {
+  await connectDB();  // FIRST connect to Mongo
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();
 
 export default app;
