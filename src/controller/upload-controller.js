@@ -37,9 +37,6 @@ export const getAllS3Images = async (req, res) => {
     const params = {
       Bucket: process.env.AWS_BUCKET,
     };
-    console.log(process.env.AWS_ACCESS);
-console.log(process.env.AWS_SECRET);
-
 
     const data = await s3.listObjectsV2(params).promise();
 
