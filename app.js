@@ -24,11 +24,13 @@ app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://noidapropertysolution.com" || "http://localhost:8080",
+    origin: [
+      "https://noidapropertysolution.com",
+      "http://localhost:8080"
+    ],
     credentials: true,
   })
 );
-
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/careers", careerRoutes);
