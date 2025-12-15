@@ -27,12 +27,18 @@ const ResidentialPropertySchema = new mongoose.Schema(
       carpetArea: { type: Number },
       builtUpArea: { type: Number },
       superBuiltUpArea: { type: Number },
+      plotArea: { type: Number },
+      Areatype: {
+      type: String,
+      enum: ["Sqft", "Sqm"],
+      default: "Sqm",
+    },
     },
     otherRooms: [{ type: String }],
 
     furnishingStatus: {
       type: String,
-      enum: ["Furnished", "Semi-Furnished", "Unfurnished"],
+      enum: ["Furnished", "Semi-Furnished", "Unfurnished","N/A"],
       default: "Unfurnished",
     },
     furnishings: [
@@ -54,7 +60,7 @@ const ResidentialPropertySchema = new mongoose.Schema(
     // 🚧 Availability & Age
     availabilityStatus: {
       type: String,
-      enum: ["Ready to Move", "Under Construction"],
+      enum: ["Ready to Move", "Under Construction","CC"],
       default: "Ready to Move",
     },
     ageOfProperty: { type: Number }, // in years
@@ -68,6 +74,11 @@ const ResidentialPropertySchema = new mongoose.Schema(
     pricing: {
       expectedPrice: { type: Number, required: true },
       pricePerSqft: { type: Number },
+      Sizetype: {
+      type: String,
+      enum: ["Sqft", "Sqm"],
+      default: "Sqm",
+    },
     },
 
     // 📝 Description

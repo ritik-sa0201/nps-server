@@ -1,6 +1,5 @@
 import Contact from "../mongoDb/models/contact-model.js";
 
-
 export const getContactInfo = async (req, res) => {
   try {
     const contact = await Contact.findOne();
@@ -16,14 +15,23 @@ export const getContactInfo = async (req, res) => {
   }
 };
 
-
 export const updateContactInfo = async (req, res) => {
   try {
-    const { phone, email, address } = req.body;
+    let { phone, email, address } = req.body;
 
-    if (!phone || !email || !address) {
+    // Ensure phone is an array
+    if (typeof phone === "string") {
+      phone = [phone]; // convert single string to array
+    }
+
+    if (!Array.isArray(phone) || phone.length === 0) {
+      return res.status(400).json({ message: "Phone number must be a non-empty array" });
+    }
+
+    if (!email || !address) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
     let contact = await Contact.findOne();
 
     if (!contact) {

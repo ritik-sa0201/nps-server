@@ -51,3 +51,84 @@ export const getAdmins = async (req, res) => {
     });
   }
 };
+
+
+export const setRole = async (req, res) => {
+  try {
+    const { userId, role } = req.body;
+    if (!userId || !role) {
+      return res.status(400).json({ message: "userId and role are required" });
+    }
+
+    const allowedRoles = ["user", "admin", "super_admin"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Target user not found" });
+    }
+    user.role = role;
+    await user.save();
+    const { password, ...userWithoutPassword } = user.toObject();
+    return res.status(200).json({ message: "Role updated", user: userWithoutPassword });
+  } catch (error) {
+    console.error("setRole error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getAllUsers = async (req, res) => {
+  try {
+    // Query params
+    const page = Number(req.query.page) || 1;
+    const limit = Math.min(Number(req.query.limit) || 25, 100); // max 100 per page
+    const skip = (page - 1) * limit;
+
+    const { role, q, sortBy } = req.query;
+    const filter = {};
+
+    if (role) {
+      // only allow valid roles
+      const allowedRoles = ["user", "admin", "super_admin"];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role filter" });
+      }
+      filter.role = role;
+    }
+
+    if (q) {
+      // simple text search on fullName and email
+      filter.$or = [
+        { fullName: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    // Sorting
+    let sort = { createdAt: -1 }; // default: newest first
+    if (sortBy === "name") sort = { fullName: 1 };
+    if (sortBy === "oldest") sort = { createdAt: 1 };
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-password")
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return res.status(200).json({
+      users,
+      meta: { total, page, totalPages, limit },
+    });
+  } catch (error) {
+    console.error("getAllUsers error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

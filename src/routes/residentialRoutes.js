@@ -33,6 +33,7 @@ router.get("/:id", async (req, res) => {
       success: true,
       data: property,
     });
+    console.log(property);
   } catch (error) {
     console.error("Error fetching property:", error);
     res.status(500).json({
