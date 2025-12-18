@@ -34,25 +34,48 @@ export const uploadImagesToS3 = async (req, res) => {
 
 export const getAllS3Images = async (req, res) => {
   try {
+    const {
+      limit = 30,
+      continuationToken = null,
+      search = "",
+    } = req.query;
+
     const params = {
       Bucket: process.env.AWS_BUCKET,
+      MaxKeys: Number(limit),
     };
+    if (continuationToken) {
+      params.ContinuationToken = continuationToken;
+    }
 
     const data = await s3.listObjectsV2(params).promise();
 
-    const files = data.Contents.map((item) => ({
-      key: item.Key,
-      name: item.Key.split(".")[0],
-      slug: item.Key.replace(/[\s_-]+/g, "").toLowerCase(),
-      url: `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
-    }));
+    let files = (data.Contents || [])
+      .filter((item) =>
+        item.Key.toLowerCase().includes(search.toLowerCase())
+      )
+      .map((item) => {
+        const name = item.Key.replace(/\.[^/.]+$/, "");
+        return {
+          key: item.Key,
+          name,
+          slug: name.replace(/[\s_-]+/g, "").toLowerCase(),
+          url: `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
+        };
+      });
 
-    res.json(files);
+    res.json({
+      files,
+      nextToken: data.IsTruncated ? data.NextContinuationToken : null,
+    });
   } catch (error) {
     console.error("S3 list error:", error);
-    res.status(500).json({ message: "Failed to fetch files", error });
+    res.status(500).json({
+      message: "Failed to fetch files",
+    });
   }
 };
+
 
 
 export const getMapBySlug = async (req, res) => {
@@ -118,27 +141,50 @@ export const uploadYamunaMaps = async (req, res) => {
 
 export const getAllYamunaMaps = async (req, res) => {
   try {
+    const {
+      limit = 30,
+      continuationToken = null,
+      search = "",
+    } = req.query;
+
     const params = {
       Bucket: process.env.AWS_BUCKET_YAMUNA,
+      MaxKeys: Number(limit),
     };
+
+    // 🔥 S3 pagination support
+    if (continuationToken) {
+      params.ContinuationToken = continuationToken;
+    }
 
     const data = await s3.listObjectsV2(params).promise();
 
-    const files = data.Contents.map((item) => {
-      const fileName = item.Key.split(".")[0];
-      return {
-        key: item.Key,
-        name: fileName.replace(/[-_]/g, " "),
-        slug: fileName.replace(/[\s_-]+/g, "").toLowerCase(),
-        url: `https://${process.env.AWS_BUCKET_YAMUNA}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
-      };
-    });
+    const files = (data.Contents || [])
+      .filter((item) =>
+        item.Key.toLowerCase().includes(search.toLowerCase())
+      )
+      .map((item) => {
+        const fileName = item.Key.replace(/\.[^/.]+$/, "");
+        return {
+          key: item.Key,
+          name: fileName.replace(/[-_]/g, " "),
+          slug: fileName.replace(/[\s_-]+/g, "").toLowerCase(),
+          url: `https://${process.env.AWS_BUCKET_YAMUNA}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
+        };
+      });
 
-    res.json(files);
+    res.json({
+      files,
+      nextToken: data.IsTruncated ? data.NextContinuationToken : null,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch Yamuna maps", error: err });
+    console.error("Yamuna S3 error:", err);
+    res.status(500).json({
+      message: "Failed to fetch Yamuna maps",
+    });
   }
 };
+
 
 
 export const getYamunaMapBySlug = async (req, res) => {
