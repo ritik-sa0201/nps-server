@@ -14,7 +14,7 @@ export const uploadImagesToS3 = async (req, res) => {
       const fileName = Date.now() + "-" + file.originalname;
 
       const params = {
-        Bucket: process.env.AWS_BUCKET,
+        Bucket: process.env.AWS_BUCKET_PROPERTY,
         Key: fileName,
         Body: file.buffer,
         ContentType: file.mimetype,
