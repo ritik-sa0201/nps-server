@@ -149,7 +149,6 @@ export const uploadYamunaMaps = async (req, res) => {
   }
 };
 
-
 export const getAllYamunaMaps = async (req, res) => {
   try {
     const {
@@ -163,7 +162,7 @@ export const getAllYamunaMaps = async (req, res) => {
       MaxKeys: Number(limit),
     };
 
-    // 🔥 S3 pagination support
+    // 🔁 S3 pagination
     if (continuationToken) {
       params.ContinuationToken = continuationToken;
     }
@@ -171,16 +170,25 @@ export const getAllYamunaMaps = async (req, res) => {
     const data = await s3.listObjectsV2(params).promise();
 
     const files = (data.Contents || [])
+      // 🔎 search filter
       .filter((item) =>
         item.Key.toLowerCase().includes(search.toLowerCase())
       )
+      // 🚫 ignore thumbnail files in listing
+      .filter((item) => !item.Key.includes("_thumb"))
       .map((item) => {
         const fileName = item.Key.replace(/\.[^/.]+$/, "");
+
         return {
           key: item.Key,
           name: fileName.replace(/[-_]/g, " "),
           slug: fileName.replace(/[\s_-]+/g, "").toLowerCase(),
+
+          // ✅ FULL IMAGE (detail page)
           url: `https://${process.env.AWS_BUCKET_YAMUNA}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
+
+          // ✅ THUMBNAIL IMAGE (gallery)
+          thumbUrl: `https://${process.env.AWS_BUCKET_YAMUNA}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}_thumb.webp`,
         };
       });
 
