@@ -44,23 +44,33 @@ export const getAllS3Images = async (req, res) => {
       Bucket: process.env.AWS_BUCKET,
       MaxKeys: Number(limit),
     };
+
     if (continuationToken) {
       params.ContinuationToken = continuationToken;
     }
 
     const data = await s3.listObjectsV2(params).promise();
 
-    let files = (data.Contents || [])
+    const files = (data.Contents || [])
+      // 🔎 Search filter
       .filter((item) =>
         item.Key.toLowerCase().includes(search.toLowerCase())
       )
+      // 🚫 Ignore thumbnail files in main listing
+      .filter((item) => !item.Key.includes("_thumb"))
       .map((item) => {
         const name = item.Key.replace(/\.[^/.]+$/, "");
+
         return {
           key: item.Key,
           name,
           slug: name.replace(/[\s_-]+/g, "").toLowerCase(),
+
+          // ✅ FULL IMAGE (for detail page)
           url: `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.Key}`,
+
+          // ✅ THUMBNAIL IMAGE (for gallery)
+          thumbUrl: `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${name}_thumb.webp`,
         };
       });
 
@@ -75,6 +85,7 @@ export const getAllS3Images = async (req, res) => {
     });
   }
 };
+
 
 
 
