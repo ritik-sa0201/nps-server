@@ -53,6 +53,58 @@ export const getAdmins = async (req, res) => {
 };
 
 
+
+
+export const removeAdmin = async (req, res) => {
+  try {
+    const { adminId } = req.body;
+
+    if (!adminId) {
+      return res.status(400).json({ message: "adminId is required" });
+    }
+
+    const user = await User.findById(adminId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role === "super_admin") {
+      return res.status(403).json({
+        message: "Cannot remove super admin role",
+      });
+    }
+
+    if (user.role !== "admin") {
+      return res.status(400).json({
+        message: "User is not an admin",
+      });
+    }
+
+    user.role = "user";
+    await user.save();
+
+    const { password, ...userWithoutPassword } = user.toObject();
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin role removed successfully",
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error("removeAdmin error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while removing admin",
+    });
+  }
+};
+
+
+
+
+
+
 export const setRole = async (req, res) => {
   try {
     const { userId, role } = req.body;
