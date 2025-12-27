@@ -7,8 +7,7 @@ export const generateTokenAndSetCookie = (user, res) => {
     { expiresIn: process.env.JWT_EXPIRE }
   );
 
-  res.cookie("token", token, {
-    httpOnly: true,    
+  res.cookie("token", token, {   
     secure: true,
     sameSite: "none",
     maxAge: 1000 * 60 * 60 * 24 * parseInt(process.env.COOKIE_EXPIRE_DAYS || "7"), 
